@@ -2,6 +2,8 @@
 import { onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { ArrowLeft, History, Save } from "lucide-vue-next";
+import AppShell from "@/components/AppShell.vue";
+import GenesisLogo from "@/components/GenesisLogo.vue";
 import ChatPanel from "@/components/ChatPanel.vue";
 import EditorPane from "@/components/EditorPane.vue";
 import LivePreview from "@/components/LivePreview.vue";
@@ -74,39 +76,57 @@ async function goBack(): Promise<void> {
 </script>
 
 <template>
-  <div class="flex h-screen flex-col bg-background">
-    <header class="flex items-center justify-between border-b px-4 py-2">
-      <div class="flex items-center gap-3">
-        <Button variant="ghost" size="sm" @click="goBack">
-          <ArrowLeft class="mr-1 h-4 w-4" />
+  <AppShell variant="workspace">
+    <header class="genesis-toolbar">
+      <div class="flex min-w-0 items-center gap-3">
+        <GenesisLogo size="sm" />
+        <Button
+          variant="ghost"
+          size="sm"
+          class="genesis-btn-outline h-8 bg-transparent px-3"
+          @click="goBack"
+        >
+          <ArrowLeft class="mr-1 size-3.5" />
           Projects
         </Button>
-        <h1 class="text-sm font-medium">
+        <span class="hidden h-4 w-px bg-[var(--genesis-border)] sm:block" />
+        <h1 class="truncate text-sm font-semibold tracking-tight">
           {{ projects.currentProject?.name ?? "Loading…" }}
         </h1>
       </div>
       <div class="flex items-center gap-2">
-        <Button variant="outline" size="sm" @click="snapshotsOpen = true">
-          <History class="mr-1 h-4 w-4" />
+        <Button
+          variant="outline"
+          size="sm"
+          class="genesis-btn-outline h-8"
+          @click="snapshotsOpen = true"
+        >
+          <History class="mr-1 size-3.5" />
           Snapshots
         </Button>
         <Button
           size="sm"
+          class="genesis-btn-primary h-8 px-4"
           :disabled="!projects.activeFile || saving || projects.isStreaming"
           @click="saveFile"
         >
-          <Save class="mr-1 h-4 w-4" />
+          <Save class="mr-1 size-3.5" />
           {{ saving ? "Saving…" : "Save" }}
         </Button>
       </div>
     </header>
 
-    <Alert v-if="projects.error" variant="destructive" class="rounded-none border-x-0">
+    <Alert
+      v-if="projects.error"
+      variant="destructive"
+      class="rounded-none border-x-0 border-t-0"
+    >
       <AlertDescription>{{ projects.error }}</AlertDescription>
     </Alert>
 
-    <div class="grid min-h-0 flex-1 grid-cols-[340px_1fr_380px]">
+    <div class="genesis-workspace-grid">
       <ChatPanel
+        class="genesis-panel"
         :project-id="projectId()"
         :messages="projects.messages"
         @sent="projects.fetchMessages(projectId())"
@@ -117,6 +137,7 @@ async function goBack(): Promise<void> {
       />
 
       <EditorPane
+        class="min-w-0 bg-white/40 backdrop-blur-sm"
         :files="projects.files"
         :active-file="projects.activeFile"
         :read-only="projects.isStreaming"
@@ -125,6 +146,7 @@ async function goBack(): Promise<void> {
       />
 
       <LivePreview
+        class="genesis-panel border-r-0 border-l"
         :files="projects.files"
         :file-contents="projects.fileContentsCache"
         :refresh-key="projects.previewRefreshKey"
@@ -136,5 +158,5 @@ async function goBack(): Promise<void> {
       :project-id="projectId()"
       :snapshots="projects.snapshots"
     />
-  </div>
+  </AppShell>
 </template>

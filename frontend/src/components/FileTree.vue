@@ -15,22 +15,24 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <aside :class="cn('flex flex-col border-r bg-muted/20', $props.class)">
-    <div class="border-b px-3 py-2">
-      <h2 class="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-        Files
-      </h2>
+  <aside :class="cn('flex flex-col border-r border-[var(--genesis-border)] bg-white/30', $props.class)">
+    <div class="genesis-panel-header">
+      <h2 class="genesis-panel-subtitle font-semibold uppercase tracking-wide">Files</h2>
     </div>
     <ScrollArea class="flex-1">
-      <p v-if="files.length === 0" class="p-3 text-xs text-muted-foreground">
+      <p v-if="files.length === 0" class="p-3 text-xs text-[var(--genesis-muted)]">
         No files yet
       </p>
       <ul v-else class="p-2">
         <li v-for="file in files" :key="file.fileId">
           <button
             type="button"
-            class="w-full truncate rounded-md px-2 py-1.5 text-left font-mono text-xs transition-colors hover:bg-accent"
-            :class="file.fileId === activeFileId ? 'bg-accent text-accent-foreground' : 'text-muted-foreground'"
+            class="w-full truncate rounded-xl px-2.5 py-2 text-left font-mono text-xs transition-colors"
+            :class="
+              file.fileId === activeFileId
+                ? 'bg-white/90 font-medium text-[var(--genesis-text)] shadow-sm'
+                : 'text-[var(--genesis-muted)] hover:bg-white/50'
+            "
             @click="emit('select', file.fileId)"
           >
             {{ file.path }}

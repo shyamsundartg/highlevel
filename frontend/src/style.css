@@ -48,25 +48,33 @@
 }
 
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --radius: 0.75rem;
+  --genesis-bg: #f5f5f7;
+  --genesis-text: #1d1d1f;
+  --genesis-muted: #6e6e73;
+  --genesis-border: rgba(0, 0, 0, 0.08);
+  --genesis-blue: #0071e3;
+  --genesis-blue-hover: #0077ed;
+  --genesis-glass: rgba(255, 255, 255, 0.72);
+  --genesis-glass-strong: rgba(255, 255, 255, 0.88);
+  --background: var(--genesis-bg);
+  --foreground: var(--genesis-text);
+  --card: var(--genesis-glass-strong);
+  --card-foreground: var(--genesis-text);
+  --popover: #ffffff;
+  --popover-foreground: var(--genesis-text);
+  --primary: var(--genesis-blue);
+  --primary-foreground: #ffffff;
+  --secondary: rgba(0, 0, 0, 0.05);
+  --secondary-foreground: var(--genesis-text);
+  --muted: rgba(0, 0, 0, 0.04);
+  --muted-foreground: var(--genesis-muted);
+  --accent: rgba(0, 0, 0, 0.05);
+  --accent-foreground: var(--genesis-text);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --border: var(--genesis-border);
+  --input: var(--genesis-border);
+  --ring: rgba(0, 113, 227, 0.35);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -88,8 +96,278 @@
   }
   body {
     @apply bg-background text-foreground;
-    @apply font-sans;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
+      "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
   }
+}
+
+/* Genesis Apple-style app chrome (post-login) */
+.genesis-app {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+  color: var(--genesis-text);
+  background: var(--genesis-bg);
+}
+
+.genesis-app--workspace {
+  height: 100vh;
+  min-height: 100vh;
+}
+
+.genesis-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.genesis-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.5;
+  animation: genesis-float 18s ease-in-out infinite;
+}
+
+.genesis-orb-a {
+  width: 420px;
+  height: 420px;
+  top: -120px;
+  right: -80px;
+  background: radial-gradient(circle, #c8d8ff 0%, transparent 70%);
+}
+
+.genesis-orb-b {
+  width: 360px;
+  height: 360px;
+  bottom: -100px;
+  left: -60px;
+  background: radial-gradient(circle, #e8d4ff 0%, transparent 70%);
+  animation-delay: -6s;
+}
+
+.genesis-orb-c {
+  width: 280px;
+  height: 280px;
+  top: 40%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: radial-gradient(circle, #d4f0ff 0%, transparent 70%);
+  animation-delay: -12s;
+}
+
+@keyframes genesis-float {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-24px) scale(1.04);
+  }
+}
+
+.genesis-shell {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+}
+
+.genesis-app--default .genesis-shell {
+  padding: 1.5rem;
+}
+
+.genesis-app--workspace .genesis-shell {
+  display: flex;
+  height: 100vh;
+  min-height: 100vh;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.glass-panel {
+  border: 1px solid var(--genesis-border);
+  background: var(--genesis-glass);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+}
+
+.glass-card {
+  border-radius: 20px;
+  border: 1px solid var(--genesis-border);
+  background: var(--genesis-glass);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+}
+
+.genesis-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.genesis-page-title {
+  font-size: 1.75rem;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  color: var(--genesis-text);
+}
+
+.genesis-page-subtitle {
+  font-size: 0.9375rem;
+  color: var(--genesis-muted);
+}
+
+.genesis-btn-pill {
+  border-radius: 9999px !important;
+}
+
+.genesis-btn-primary {
+  border-radius: 9999px !important;
+  background: var(--genesis-blue) !important;
+  color: #fff !important;
+  box-shadow: none !important;
+}
+
+.genesis-btn-primary:hover {
+  background: var(--genesis-blue-hover) !important;
+}
+
+.genesis-btn-outline {
+  border-radius: 9999px !important;
+  border-color: var(--genesis-border) !important;
+  background: rgba(255, 255, 255, 0.65) !important;
+  color: var(--genesis-text) !important;
+  box-shadow: none !important;
+}
+
+.genesis-btn-outline:hover {
+  background: rgba(0, 0, 0, 0.06) !important;
+  color: var(--genesis-text) !important;
+  border-color: var(--genesis-border) !important;
+}
+
+.genesis-input {
+  border-radius: 12px !important;
+  border-color: var(--genesis-border) !important;
+  background: rgba(255, 255, 255, 0.9) !important;
+}
+
+.genesis-input:focus-visible {
+  border-color: var(--genesis-blue) !important;
+  box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.15) !important;
+}
+
+.genesis-logo-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+.genesis-logo-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: linear-gradient(145deg, #1d1d1f 0%, #3a3a3c 100%);
+  color: #fff;
+  font-size: 1.375rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+}
+
+.genesis-logo-mark--sm {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  font-size: 1rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.14);
+}
+
+.genesis-logo-label {
+  font-size: 1.125rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.genesis-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border-bottom: 1px solid var(--genesis-border);
+  background: var(--genesis-glass-strong);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  padding: 0.5rem 1rem;
+}
+
+.genesis-workspace-grid {
+  display: grid;
+  min-height: 0;
+  flex: 1;
+  overflow: hidden;
+  grid-template-columns: 340px 1fr 380px;
+  gap: 0;
+}
+
+.genesis-workspace-grid > * {
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+.genesis-panel {
+  display: flex;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+  flex-direction: column;
+  border-right: 1px solid var(--genesis-border);
+  background: var(--genesis-glass-strong);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+}
+
+.genesis-panel-header {
+  border-bottom: 1px solid var(--genesis-border);
+  padding: 0.875rem 1rem;
+}
+
+.genesis-panel-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.genesis-panel-subtitle {
+  font-size: 0.75rem;
+  color: var(--genesis-muted);
+}
+
+.genesis-project-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border-radius: 14px;
+  padding: 0.875rem 1rem;
+  transition: background 0.2s ease;
+}
+
+.genesis-project-row:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.genesis-project-row + .genesis-project-row {
+  margin-top: 0.25rem;
 }
 
 html,

@@ -11,12 +11,13 @@ import {
 } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import type { FileMeta } from "@/types/api";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 const props = defineProps<{
   files: FileMeta[];
   fileContents: Record<string, string>;
   refreshKey?: number;
+  class?: string;
 }>();
 
 const iframeRef = ref<HTMLIFrameElement | null>(null);
@@ -231,25 +232,26 @@ defineExpose({ refresh: pushPreview });
 </script>
 
 <template>
-  <Card class="flex h-full min-h-0 flex-col gap-0 rounded-none border-0 border-l py-0">
-    <CardHeader class="border-b px-4 py-3">
-      <CardTitle class="text-sm">Live Preview</CardTitle>
-    </CardHeader>
-    <CardContent class="relative min-h-0 flex-1 p-0">
+  <div :class="cn('flex h-full min-h-0 flex-col', $props.class)">
+    <div class="genesis-panel-header">
+      <h2 class="genesis-panel-title">Live Preview</h2>
+      <p class="genesis-panel-subtitle">Real HighLevel data</p>
+    </div>
+    <div class="relative min-h-0 flex-1">
       <div
         v-if="loading"
-        class="absolute inset-0 z-10 flex items-center justify-center bg-background/80 text-sm text-muted-foreground"
+        class="absolute inset-0 z-10 flex items-center justify-center bg-white/60 text-sm text-[var(--genesis-muted)] backdrop-blur-sm"
       >
         Loading preview…
       </div>
-      <p v-if="error" class="p-4 text-sm text-destructive">{{ error }}</p>
+      <p v-if="error" class="p-4 text-sm text-red-600">{{ error }}</p>
       <iframe
         ref="iframeRef"
-        class="h-full w-full border-0 bg-background"
+        class="h-full w-full border-0 bg-[#0f1117]"
         src="/preview-runner.html"
         title="App preview"
         sandbox="allow-scripts allow-same-origin"
       />
-    </CardContent>
-  </Card>
+    </div>
+  </div>
 </template>

@@ -5,12 +5,12 @@ import type { GenerateEvent, Message } from "@/types/api";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 const props = defineProps<{
   projectId: string;
   messages: Message[];
+  class?: string;
 }>();
 
 const emit = defineEmits<{
@@ -33,8 +33,9 @@ onMounted(scrollToBottom);
 
 async function scrollToBottom(): Promise<void> {
   await nextTick();
-  if (listRef.value) {
-    listRef.value.scrollTop = listRef.value.scrollHeight;
+  const el = listRef.value;
+  if (el) {
+    el.scrollTop = el.scrollHeight;
   }
 }
 
@@ -99,43 +100,58 @@ function stop(): void {
 </script>
 
 <template>
-  <div class="flex h-full min-h-0 flex-col border-r">
-    <div class="border-b px-4 py-3">
-      <h2 class="text-sm font-medium">Chat</h2>
-      <p class="text-xs text-muted-foreground">Describe your HighLevel app</p>
+  <div :class="cn('flex h-full min-h-0 flex-col overflow-hidden', $props.class)">
+    <div class="genesis-panel-header shrink-0">
+      <h2 class="genesis-panel-title">Chat</h2>
+      <p class="genesis-panel-subtitle">Describe your HighLevel app</p>
     </div>
 
-    <ScrollArea ref="listRef" class="min-h-0 flex-1 px-4 py-3">
+    <div
+      ref="listRef"
+      class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-3"
+    >
       <div class="space-y-3">
         <div
           v-for="msg in messages"
           :key="msg.id"
-          class="rounded-lg border p-3"
-          :class="msg.role === 'user' ? 'border-primary/40' : ''"
+          :class="cn(
+            'rounded-2xl border px-3.5 py-3',
+            msg.role === 'user'
+              ? 'border-[rgba(0,113,227,0.2)] bg-white/80'
+              : 'border-[var(--genesis-border)] bg-white/50',
+          )"
         >
-          <Badge variant="secondary" class="mb-2 text-[10px] uppercase">
+          <p
+            class="mb-2 text-[10px] font-semibold uppercase tracking-wide"
+            :class="msg.role === 'user' ? 'text-[var(--genesis-blue)]' : 'text-[var(--genesis-muted)]'"
+          >
             {{ msg.role }}
-          </Badge>
-          <pre class="whitespace-pre-wrap text-xs">{{ msg.content }}</pre>
+          </p>
+          <pre class="whitespace-pre-wrap text-xs leading-relaxed">{{ msg.content }}</pre>
         </div>
 
-        <div v-if="streaming && streamText" class="rounded-lg border p-3">
-          <Badge class="mb-2 text-[10px] uppercase">assistant</Badge>
-          <pre class="whitespace-pre-wrap text-xs">{{ streamText }}</pre>
+        <div
+          v-if="streaming && streamText"
+          class="rounded-2xl border border-[var(--genesis-border)] bg-white/50 px-3.5 py-3"
+        >
+          <p class="mb-2 text-[10px] font-semibold uppercase tracking-wide text-[var(--genesis-muted)]">
+            assistant
+          </p>
+          <pre class="whitespace-pre-wrap text-xs leading-relaxed">{{ streamText }}</pre>
         </div>
 
         <div
           v-for="(content, path) in streamingFiles"
           :key="path"
-          class="rounded-lg border border-dashed p-3 text-xs text-muted-foreground"
+          class="rounded-2xl border border-dashed border-[var(--genesis-border)] bg-white/30 px-3.5 py-3 text-xs text-[var(--genesis-muted)]"
         >
           Writing {{ path }}… ({{ content.length }} chars)
         </div>
       </div>
-    </ScrollArea>
+    </div>
 
-    <div class="space-y-2 border-t p-4">
-      <Alert v-if="error" variant="destructive">
+    <div class="shrink-0 space-y-2 border-t border-[var(--genesis-border)] bg-white/60 p-4 backdrop-blur-md">
+      <Alert v-if="error" variant="destructive" class="rounded-xl">
         <AlertDescription>{{ error }}</AlertDescription>
       </Alert>
 
@@ -144,13 +160,24 @@ function stop(): void {
           v-model="input"
           rows="3"
           placeholder='e.g. "Build a contact dashboard with search"'
+          class="genesis-input min-h-[88px] resize-none rounded-2xl bg-white/90"
           :disabled="streaming"
         />
         <div class="flex justify-end gap-2">
-          <Button v-if="streaming" type="button" variant="outline" @click="stop">
+          <Button
+            v-if="streaming"
+            type="button"
+            variant="outline"
+            class="genesis-btn-outline"
+            @click="stop"
+          >
             Stop
           </Button>
-          <Button type="submit" :disabled="streaming || !input.trim()">
+          <Button
+            type="submit"
+            class="genesis-btn-primary"
+            :disabled="streaming || !input.trim()"
+          >
             {{ streaming ? "Generating…" : "Send" }}
           </Button>
         </div>

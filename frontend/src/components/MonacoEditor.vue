@@ -85,7 +85,21 @@ function handleUpdate(value: string): void {
   emit("update", value);
 }
 
-
+watch(
+  () => props.content,
+  (value) => {
+    const editor = editorRef.value;
+    if (!editor) {
+      return;
+    }
+    const current = editor.getValue();
+    if (current !== value) {
+      suppressEmit = true;
+      editor.setValue(value);
+      suppressEmit = false;
+    }
+  },
+);
 
 onUnmounted(() => {
   editorRef.value = null;
