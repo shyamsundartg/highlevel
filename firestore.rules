@@ -1,0 +1,55 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function ownsProject(projectId) {
+      return isSignedIn() &&
+        get(/databases/$(database)/documents/projects/$(projectId)).data.userId == request.auth.uid;
+    }
+
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+
+      match /secrets/{docId} {
+        allow read, write: if false;
+      }
+
+      match /webhookEvents/{eventId} {
+        allow read: if isOwner(userId);
+        allow write: if false;
+      }
+    }
+
+    match /projects/{projectId} {
+      allow read: if ownsProject(projectId);
+      allow create, update, delete: if false;
+
+      match /files/{fileId} {
+        allow read: if ownsProject(projectId);
+        allow create, update, delete: if false;
+      }
+
+      match /messages/{messageId} {
+        allow read: if ownsProject(projectId);
+        allow create, update, delete: if false;
+      }
+
+      match /snapshots/{snapshotId} {
+        allow read: if ownsProject(projectId);
+        allow create, update, delete: if false;
+      }
+    }
+
+    match /oauthStates/{stateId} {
+      allow read, write: if false;
+    }
+  }
+}
