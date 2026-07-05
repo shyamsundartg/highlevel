@@ -141,6 +141,18 @@ function stop(): void {
         </div>
 
         <div
+          v-else-if="streaming && Object.keys(streamingFiles).length > 0"
+          class="rounded-2xl border border-[var(--genesis-border)] bg-white/50 px-3.5 py-3"
+        >
+          <p class="mb-2 text-[10px] font-semibold uppercase tracking-wide text-[var(--genesis-muted)]">
+            assistant
+          </p>
+          <p class="text-xs leading-relaxed text-[var(--genesis-muted)]">
+            Updating {{ Object.keys(streamingFiles).join(", ") }}…
+          </p>
+        </div>
+
+        <div
           v-for="(content, path) in streamingFiles"
           :key="path"
           class="rounded-2xl border border-dashed border-[var(--genesis-border)] bg-white/30 px-3.5 py-3 text-xs text-[var(--genesis-muted)]"

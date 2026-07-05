@@ -44,13 +44,7 @@ function onEditorUpdate(content: string): void {
 }
 
 async function onGenerated(): Promise<void> {
-  await Promise.all([
-    projects.fetchMessages(projectId()),
-    projects.fetchFiles(projectId()),
-    projects.fetchSnapshots(projectId()),
-  ]);
-  await projects.refreshFileContents(projectId());
-  projects.bumpPreview();
+  await projects.reconcileAfterGeneration(projectId());
 }
 
 function onFileStreaming(path: string, language: string, content: string): void {

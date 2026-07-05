@@ -19,6 +19,25 @@ export const GET_API_DOC_TOOL: Anthropic.Tool = {
   },
 };
 
+const RUNTIME_NOTES = {
+  http:
+    "REQUIRED: await window.__GENESIS__.fetch(path, options). NEVER bare fetch(), axios, or leadconnectorhq.com.",
+  returns:
+    "Parsed JSON. Throws Error with .message on failure — no res.json() or handleResponse wrapper.",
+  getExample:
+    'const data = await window.__GENESIS__.fetch("/hl/calendars"); const list = data.calendars || data.data || [];',
+  postExample:
+    'await window.__GENESIS__.fetch("/hl/contacts", { method: "POST", body: { firstName: "Jane" } })',
+  queryExample:
+    'await window.__GENESIS__.fetch("/hl/contacts", { params: { query: "case" } })',
+  events: "Live CRM updates: window.__GENESIS__.onHlEvent(callback)",
+  helpers: [
+    "window.__GENESIS__.contactName(c)",
+    "window.__GENESIS__.contactId(c)",
+    "window.__GENESIS__.upsertContact(list, contact)",
+  ],
+};
+
 type ApiDoc = {
   method: "GET" | "POST" | "PUT";
   path: string;
@@ -75,7 +94,7 @@ const DOCS: Record<string, ApiDoc | { endpoints: string[] }> = {
     },
     notes: [
       "list and search: pass query as GET param (locationId injected server-side)",
-      'search example: fetch("/hl/contacts", { params: { query: "case" } })',
+      'search: await window.__GENESIS__.fetch("/hl/contacts", { params: { query: "case" } })',
       "list = data.contacts || data.data || []",
       "display name: window.__GENESIS__.contactName(c)",
       "upsert: window.__GENESIS__.upsertContact(list, contact)",
@@ -333,7 +352,9 @@ const DOCS: Record<string, ApiDoc | { endpoints: string[] }> = {
         },
       ],
     },
-    notes: ["list = data.calendars || data.data || []"],
+    notes: [
+      'fetch: const data = await window.__GENESIS__.fetch("/hl/calendars"); list = data.calendars || data.data || []',
+    ],
   },
 
   "GET /hl/calendars/:calendarId/free-slots": {
@@ -471,7 +492,7 @@ const DOCS: Record<string, ApiDoc | { endpoints: string[] }> = {
 
 export function getApiDocs(endpoints: string[]): string {
   if (!endpoints.length) {
-    return JSON.stringify({ docs: { list: DOCS.list } });
+    return JSON.stringify({ runtime: RUNTIME_NOTES, docs: { list: DOCS.list } });
   }
 
   const docs: Record<string, unknown> = {};
@@ -487,7 +508,7 @@ export function getApiDocs(endpoints: string[]): string {
     }
   }
 
-  const payload: Record<string, unknown> = { docs };
+  const payload: Record<string, unknown> = { runtime: RUNTIME_NOTES, docs };
   if (unknown.length > 0) {
     payload.unknown = unknown;
     payload.endpoints = Object.keys(DOCS).filter((k) => k !== "list");

@@ -4,11 +4,9 @@ node_modules/
 # Build output
 functions/lib/
 functions/node_modules/
-functions/package-lock.json
 functions/.env/
 frontend/dist/
 frontend/node_modules/
-frontend/package-lock.json
 frontend/.nuxt/
 frontend/.output/
 frontend/.vscode/
@@ -42,7 +40,6 @@ hosting/.cache
 # Firebase Functions
 /functions/node_modules/
 /functions/.env
-/functions/package-lock.json
 
 # Firebase Emulators
 /firebase-*.zip

@@ -47,6 +47,19 @@ export const useProjectsStore = defineStore("projects", () => {
     }
   }
 
+  function languageFromPath(path: string): string {
+    const ext = path.slice(path.lastIndexOf(".")).toLowerCase();
+    const map: Record<string, string> = {
+      ".vue": "vue",
+      ".ts": "typescript",
+      ".js": "javascript",
+      ".css": "css",
+      ".html": "html",
+      ".json": "json",
+    };
+    return map[ext] ?? "plaintext";
+  }
+
   async function refreshFileContents(projectId: string): Promise<void> {
     await Promise.all(
       files.value.map(async (meta) => {
@@ -56,6 +69,49 @@ export const useProjectsStore = defineStore("projects", () => {
         fileContentsCache.value[file.path] = file.content;
       }),
     );
+  }
+
+  /** After generation, merge server state with any files still only in the stream cache. */
+  async function reconcileAfterGeneration(projectId: string): Promise<void> {
+    const stagedCache = { ...fileContentsCache.value };
+
+    await Promise.all([
+      fetchMessages(projectId),
+      fetchFiles(projectId),
+      fetchSnapshots(projectId),
+    ]);
+
+    const serverPaths = new Set(files.value.map((f) => f.path));
+
+    for (const [path, content] of Object.entries(stagedCache)) {
+      if (!content || serverPaths.has(path)) {
+        continue;
+      }
+      files.value = [
+        ...files.value,
+        {
+          fileId: encodeFileId(path),
+          path,
+          language: languageFromPath(path),
+          sizeBytes: new TextEncoder().encode(content).length,
+          updatedAt: Date.now(),
+        },
+      ];
+      fileContentsCache.value[path] = content;
+    }
+
+    await Promise.all(
+      files.value
+        .filter((meta) => serverPaths.has(meta.path))
+        .map(async (meta) => {
+          const file = await apiRequest<ProjectFile>(
+            `/projects/${projectId}/files/${meta.fileId}`,
+          );
+          fileContentsCache.value[file.path] = file.content;
+        }),
+    );
+
+    previewRefreshKey.value += 1;
   }
 
   async function loadProject(projectId: string): Promise<void> {
@@ -282,6 +338,7 @@ export const useProjectsStore = defineStore("projects", () => {
     loadProject,
     fetchFiles,
     refreshFileContents,
+    reconcileAfterGeneration,
     openFile,
     saveActiveFile,
     fetchMessages,

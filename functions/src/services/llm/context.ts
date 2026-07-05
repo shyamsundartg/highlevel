@@ -1,5 +1,6 @@
 import { listFiles, getFile } from "../projects/files";
 import { listMessages } from "../projects/messages";
+import { parseFileBlocks } from "./parser";
 
 export interface LlmContext {
   systemPrompt: string;
@@ -9,10 +10,23 @@ export interface LlmContext {
 const MAX_CONTEXT_FILES = 20;
 const MAX_FILE_CHARS = 8000;
 const MAX_HISTORY_MESSAGES = 20;
+const MAX_ASSISTANT_HISTORY_CHARS = 2000;
+
+function historyMessageContent(role: string, content: string): string {
+  if (role !== "assistant") {
+    return content;
+  }
+
+  const { plainText } = parseFileBlocks(content);
+  const text = plainText.trim() || "[Updated project files]";
+  if (text.length <= MAX_ASSISTANT_HISTORY_CHARS) {
+    return text;
+  }
+  return `${text.slice(0, MAX_ASSISTANT_HISTORY_CHARS)}\n... [truncated]`;
+}
 
 export async function buildGenerationContext(
   projectId: string,
-  userMessage: string,
   systemPrompt: string,
 ): Promise<LlmContext> {
   const [fileMetas, history] = await Promise.all([
@@ -42,15 +56,15 @@ export async function buildGenerationContext(
     contextParts.push("Current project files:\n" + fileContents.join("\n\n"));
   }
 
-  const priorMessages = history;
-  if (priorMessages.length > 0) {
-    const transcript = priorMessages
-      .map((m) => `${m.role.toUpperCase()}: ${m.content}`)
+  if (history.length > 0) {
+    const transcript = history
+      .map(
+        (m) =>
+          `${m.role.toUpperCase()}: ${historyMessageContent(m.role, m.content)}`,
+      )
       .join("\n\n");
     contextParts.push("Conversation history:\n" + transcript);
   }
-
-  contextParts.push(`USER REQUEST:\n${userMessage}`);
 
   return {
     systemPrompt,

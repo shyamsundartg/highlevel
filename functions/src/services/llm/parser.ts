@@ -27,11 +27,12 @@ export class FileBlockParser {
   }
 
   flush(): ParserEvent[] {
-    if (this.inFile && this.buffer.length > 0) {
-      this.currentContent += this.buffer;
-      this.buffer = "";
-      const events = this.closeFile();
-      return events;
+    if (this.inFile) {
+      if (this.buffer.length > 0) {
+        this.currentContent += this.buffer;
+        this.buffer = "";
+      }
+      return this.closeFile();
     }
 
     const events: ParserEvent[] = [];

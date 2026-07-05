@@ -4,7 +4,7 @@ import { onRequest } from "firebase-functions/v2/https";
 import * as logger from "firebase-functions/logger";
 import { assertGenerationEnv, env } from "./config/env";
 import { buildGenerationContext } from "./services/llm/context";
-import { FileBlockParser } from "./services/llm/parser";
+import { FileBlockParser, parseFileBlocks } from "./services/llm/parser";
 import { SYSTEM_PROMPT } from "./services/llm/prompts";
 import {
   GET_API_DOC_TOOL,
@@ -55,6 +55,24 @@ function isAbortError(err: unknown): boolean {
 }
 
 const MAX_TOOL_ROUNDS = 3;
+
+function buildAssistantDisplayText(
+  rawText: string,
+  filesWritten: Record<string, SnapshotFileEntry>,
+): string {
+  const { plainText } = parseFileBlocks(rawText);
+  const summary = plainText.trim();
+  if (summary) {
+    return summary;
+  }
+
+  const paths = Object.keys(filesWritten);
+  if (paths.length > 0) {
+    return `Updated ${paths.join(", ")}.`;
+  }
+
+  return rawText.trim();
+}
 
 export const generate = onRequest(
   {
@@ -226,11 +244,9 @@ export const generate = onRequest(
     };
 
     try {
-      const context = await buildGenerationContext(
-        projectId,
-        message,
-        SYSTEM_PROMPT,
-      );
+      await addMessage(projectId, "user", message);
+
+      const context = await buildGenerationContext(projectId, SYSTEM_PROMPT);
 
       if (cancelled) {
         cleanupListeners();
@@ -239,8 +255,6 @@ export const generate = onRequest(
         }
         return;
       }
-
-      await addMessage(projectId, "user", message);
 
       const messages: Anthropic.MessageParam[] = [...context.messages];
       let rounds = 0;
@@ -256,7 +270,7 @@ export const generate = onRequest(
           max_tokens: 16000,
           system: context.systemPrompt,
           messages,
-          tools: [GET_API_DOC_TOOL],
+          ...(rounds < MAX_TOOL_ROUNDS ? { tools: [GET_API_DOC_TOOL] } : {}),
         });
 
         for await (const event of stream) {
@@ -345,6 +359,42 @@ export const generate = onRequest(
         break;
       }
 
+      if (
+        !cancelled &&
+        assistantText.trim().length === 0 &&
+        Object.keys(snapshotFiles).length === 0
+      ) {
+        messages.push({
+          role: "user",
+          content:
+            "Apply the requested changes now. Emit every changed file using FILE blocks, then a brief summary. Do not call any tools.",
+        });
+
+        stream = client.messages.stream({
+          model: env.anthropicModel,
+          max_tokens: 16000,
+          system: context.systemPrompt,
+          messages,
+        });
+
+        for await (const event of stream) {
+          if (cancelled || sseRes.writableEnded || sseRes.destroyed) {
+            abortGeneration("loop_guard");
+            break;
+          }
+
+          if (
+            event.type === "content_block_delta" &&
+            event.delta.type === "text_delta"
+          ) {
+            const ok = await processTextDelta(event.delta.text);
+            if (!ok) {
+              break;
+            }
+          }
+        }
+      }
+
       if (cancelled) {
         if (!sseRes.writableEnded) {
           writeSse(sseRes, "error", {
@@ -373,7 +423,12 @@ export const generate = onRequest(
         }
       }
 
-      await addMessage(projectId, "assistant", assistantText, generationId);
+      await addMessage(
+        projectId,
+        "assistant",
+        buildAssistantDisplayText(assistantText, snapshotFiles) || "Done.",
+        generationId,
+      );
 
       if (Object.keys(snapshotFiles).length > 0) {
         const snapshot = await createSnapshot(
