@@ -8,7 +8,7 @@ import { consumeState } from "./services/highlevel/state";
 import { storeInitialTokens } from "./services/highlevel/tokens";
 
 export const hlOAuthCallback = onRequest(
-  { region: "asia-south1", cors: false },
+  { region: "asia-south1", cors: false, invoker: "public" },
   async (req, res) => {
     const redirect = (query: string): void => {
       res.redirect(`${env.frontendUrl}${query}`);

@@ -8,6 +8,7 @@ export const api = onRequest(
     region: "asia-south1",
     cors: true,
     timeoutSeconds: 60,
+    invoker: "public",
   },
   app,
 );

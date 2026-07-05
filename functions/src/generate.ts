@@ -61,6 +61,7 @@ export const generate = onRequest(
     region: "asia-south1",
     cors: true,
     timeoutSeconds: 300,
+    invoker: "public",
   },
   async (req, res) => {
     const sseRes = res as unknown as SseResponse;
