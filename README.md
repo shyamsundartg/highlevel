@@ -2,6 +2,10 @@
 
 Vue 3 + TypeScript frontend, Firebase backend (Auth, Firestore, Cloud Functions), and Anthropic-powered code generation with real HighLevel API integration.
 
+## Walkthrough video
+
+[Loom demo walkthrough](https://www.loom.com/share/a17b00123ed44ceb9ff640bb8bcba635) 
+
 ## Live URLs
 
 | Service | URL |
