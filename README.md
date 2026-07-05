@@ -89,10 +89,10 @@ Copy and fill in `functions/.env` (see keys in `functions/src/config/env.ts`):
 ```env
 HL_CLIENT_ID=...
 HL_CLIENT_SECRET=...
-HL_OAUTH_REDIRECT_URI=http://127.0.0.1:5001/hl-genesis/asia-south1/hlOAuthCallback
+HL_OAUTH_REDIRECT_URI=
 HL_OAUTH_SCOPES=contacts.readonly contacts.write ...
 ANTHROPIC_API_KEY=...
-FRONTEND_URL=http://localhost:5173
+FRONTEND_URL=
 HL_WEBHOOK_SKIP_VERIFY=true   # optional for local curl tests
 ```
 
@@ -101,8 +101,8 @@ HL_WEBHOOK_SKIP_VERIFY=true   # optional for local curl tests
 `frontend/.env.development` is preconfigured for emulators:
 
 ```env
-VITE_API_BASE=http://127.0.0.1:5001/hl-genesis/asia-south1/api
-VITE_GENERATE_URL=http://127.0.0.1:5001/hl-genesis/asia-south1/generate
+VITE_API_BASE=
+VITE_GENERATE_URL=
 VITE_FIREBASE_PROJECT_ID=hl-genesis
 VITE_FIREBASE_API_KEY=demo-api-key
 VITE_USE_EMULATORS=true
