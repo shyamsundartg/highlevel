@@ -204,8 +204,20 @@
         };
       }
 
+      function escapeHtml(text) {
+        return String(text)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+      }
+
       function renderError(message) {
-        host.innerHTML = `<div class="error">${message}</div>`;
+        host.textContent = "";
+        const el = document.createElement("div");
+        el.className = "error";
+        el.textContent = message;
+        host.appendChild(el);
       }
 
       /**

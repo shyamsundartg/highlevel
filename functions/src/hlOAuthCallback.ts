@@ -6,16 +6,27 @@ import {
 } from "./services/highlevel/oauth";
 import { consumeState } from "./services/highlevel/state";
 import { storeInitialTokens } from "./services/highlevel/tokens";
+import {
+  clearOAuthStateCookie,
+  oauthStateCookieValue,
+} from "./utils/oauthCookie";
 
 export const hlOAuthCallback = onRequest(
   { region: "asia-south1", cors: false, invoker: "public" },
   async (req, res) => {
     const redirect = (query: string): void => {
+      res.setHeader("Set-Cookie", clearOAuthStateCookie());
       res.redirect(`${env.frontendUrl}${query}`);
     };
 
     const code = typeof req.query.code === "string" ? req.query.code : "";
     const state = typeof req.query.state === "string" ? req.query.state : "";
+
+    const cookieState = oauthStateCookieValue(req.headers.cookie);
+    if (!cookieState || cookieState !== state) {
+      redirect("?hl=error&reason=oauth_session_mismatch");
+      return;
+    }
 
     let uid: string;
     try {

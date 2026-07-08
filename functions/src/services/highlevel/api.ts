@@ -1,9 +1,9 @@
 import {
-  HL_ALLOWED_PATH_PREFIXES,
   HL_API_BASE,
   HL_API_VERSION,
 } from "./constants";
 import { HlApiError } from "./errors";
+import { assertAllowedPath } from "./pathSecurity";
 import { getValidAccessToken, ValidAccessToken } from "./tokens";
 
 export type HlHttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
@@ -23,19 +23,25 @@ const ALLOWED_METHODS = new Set<HlHttpMethod>([
   "DELETE",
 ]);
 
-function assertAllowedPath(path: string): string {
-  const normalized = path.startsWith("/") ? path : `/${path}`;
-  const allowed = HL_ALLOWED_PATH_PREFIXES.some((prefix) =>
-    normalized.startsWith(prefix),
-  );
-  if (!allowed) {
-    throw new HlApiError(
-      "HL_PATH_NOT_ALLOWED",
-      `Path not allowed: ${normalized}`,
-      403,
-    );
+const SCOPED_QUERY_KEYS = new Set(["locationId", "userId", "userIds"]);
+
+function stripScopedQuery(
+  extra?: Record<string, string | number | boolean | undefined>,
+): Record<string, string | number | boolean | undefined> {
+  if (!extra) {
+    return {};
   }
-  return normalized;
+  const out = { ...extra };
+  for (const key of SCOPED_QUERY_KEYS) {
+    delete out[key];
+  }
+  return out;
+}
+
+function stripScopedBody(payload: Record<string, unknown>): void {
+  delete payload.locationId;
+  delete payload.userId;
+  delete payload.userIds;
 }
 
 function buildUrl(
@@ -111,8 +117,8 @@ export async function hlGetForLocation(
 ): Promise<unknown> {
   const creds = await getValidAccessToken(uid);
   const query: Record<string, string | number | boolean | undefined> = {
+    ...stripScopedQuery(extraQuery),
     locationId: creds.locationId,
-    ...extraQuery,
   };
   if (options?.includeUserId) {
     query.userId = creds.userId;
@@ -140,16 +146,15 @@ export async function hlGetCalendarEvents(
   const endTime =
     extraQuery?.endTime ?? now + 30 * 24 * 60 * 60 * 1000; // +30 days
 
+  const safeExtra = stripScopedQuery(extraQuery);
   const hasFilter =
-    Boolean(extraQuery?.calendarId) ||
-    Boolean(extraQuery?.groupId) ||
-    Boolean(extraQuery?.userId);
+    Boolean(safeExtra.calendarId) || Boolean(safeExtra.groupId);
 
   const query: Record<string, string | number | boolean | undefined> = {
+    ...stripScopedQuery(extraQuery),
     locationId: creds.locationId,
     startTime,
     endTime,
-    ...extraQuery,
   };
 
   // Default filter: authorized HL user (required by HL when calendarId/groupId omitted).
@@ -201,14 +206,12 @@ export async function hlGetFreeSlots(
   const defaultEndMs = startMs + 7 * 24 * 60 * 60 * 1000;
 
   const query: Record<string, string | number | boolean | undefined> = {
+    ...stripScopedQuery(extraQuery),
     startDate: extraQuery?.startDate ?? startMs,
     endDate: extraQuery?.endDate ?? defaultEndMs,
-    ...extraQuery,
   };
 
-  if (query.userId === undefined && query.userIds === undefined) {
-    query.userId = creds.userId;
-  }
+  query.userId = creds.userId;
 
   const startNum = Number(query.startDate);
   const endNum = Number(query.endDate);
@@ -263,14 +266,9 @@ export async function hlPostForLocation(
 ): Promise<{ status: number; data: unknown }> {
   const creds = await getValidAccessToken(uid);
   const payload = asRecord(body);
-  if (payload.locationId === undefined || payload.locationId === "") {
-    payload.locationId = creds.locationId;
-  }
-  if (
-    options?.includeUserIdAs &&
-    (payload[options.includeUserIdAs] === undefined ||
-      payload[options.includeUserIdAs] === "")
-  ) {
+  stripScopedBody(payload);
+  payload.locationId = creds.locationId;
+  if (options?.includeUserIdAs) {
     payload[options.includeUserIdAs] = creds.userId;
   }
   return hlFetch(uid, {
@@ -312,11 +310,10 @@ export async function hlUpdateContact(
   if (!contactId) {
     throw new HlApiError("VALIDATION_ERROR", "contactId is required", 400);
   }
-  //const creds = await getValidAccessToken(uid);
+  const creds = await getValidAccessToken(uid);
   const payload = asRecord(body);
-  // if (payload.locationId === undefined || payload.locationId === "") {
-  //   payload.locationId = creds.locationId;
-  // }
+  stripScopedBody(payload);
+  payload.locationId = creds.locationId;
   return hlFetch(uid, {
     method: "PUT",
     path: `/contacts/${encodeURIComponent(contactId)}`,
@@ -354,7 +351,7 @@ export async function hlGetConversationMessages(
   const result = await hlFetch(uid, {
     method: "GET",
     path: `/conversations/${encodeURIComponent(conversationId)}/messages`,
-    query: { limit: 20, ...extraQuery },
+    query: { limit: 20, ...stripScopedQuery(extraQuery) },
   });
   return result.data;
 }

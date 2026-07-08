@@ -3,7 +3,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("../../config/env", () => ({
   env: {
-    hlWebhookSkipVerify: false,
     hlWebhookPublicKey: "",
   },
 }));
@@ -72,7 +71,6 @@ describe("verifyWebhookSignature", () => {
   const originalEmulator = process.env.FUNCTIONS_EMULATOR;
 
   beforeEach(() => {
-    vi.mocked(env).hlWebhookSkipVerify = false;
     vi.mocked(env).hlWebhookPublicKey = "";
     delete process.env.FUNCTIONS_EMULATOR;
   });
@@ -83,11 +81,6 @@ describe("verifyWebhookSignature", () => {
     } else {
       delete process.env.FUNCTIONS_EMULATOR;
     }
-  });
-
-  it("returns true when skip verify is enabled", () => {
-    vi.mocked(env).hlWebhookSkipVerify = true;
-    expect(verifyWebhookSignature(Buffer.from("x"), undefined)).toBe(true);
   });
 
   it("returns true in emulator when no public key configured", () => {

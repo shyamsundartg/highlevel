@@ -46,7 +46,7 @@ http://127.0.0.1:5001/hl-genesis/asia-south1/hlOAuthCallback
 https://asia-south1-hl-genesis.cloudfunctions.net/api/webhooks/hl
 ```
 
-Set `HL_WEBHOOK_PUBLIC_KEY` in `functions/.env.hl-genesis` to the Ed25519 public key from the [HL Webhook Integration Guide](https://marketplace.gohighlevel.com/docs/webhook/WebhookIntegrationGuide/). Keep `HL_WEBHOOK_SKIP_VERIFY=false` in production.
+Set `HL_WEBHOOK_PUBLIC_KEY` in `functions/.env.hl-genesis` to the Ed25519 public key from the [HL Webhook Integration Guide](https://marketplace.gohighlevel.com/docs/webhook/WebhookIntegrationGuide/). Webhook signatures are always verified in production (unsigned events are only accepted in the local emulator when no key is set).
 
 ### 4. OAuth scopes
 
@@ -97,7 +97,6 @@ HL_OAUTH_REDIRECT_URI=
 HL_OAUTH_SCOPES=contacts.readonly contacts.write ...
 ANTHROPIC_API_KEY=...
 FRONTEND_URL=
-HL_WEBHOOK_SKIP_VERIFY=true   # optional for local curl tests
 ```
 
 ### 3. Frontend environment
@@ -154,11 +153,43 @@ Open the Emulator UI at http://localhost:4000 to inspect Auth/Firestore.
 
 ---
 
+## Security improvements
+
+Issues identified during review, what was fixed, and what remains deferred. (Keep secrets out of git — rotate keys if env files were ever committed.)
+
+### Implemented
+
+| Issue | Risk | Fix |
+|-------|------|-----|
+| HL proxy: client could override `locationId` | User might access another HL location's data | Strip client `locationId` / `userId`; server always sets them after merge |
+| HL proxy: path `..` bypass | Allowlist bypass via `/contacts/../locations/...` | Reject traversal; strict prefix check on resolved path (`pathSecurity.ts`) |
+| Generic `POST /hl/proxy` | Large attack surface | Route removed; only fixed `/hl/*` endpoints remain |
+| OAuth account linking CSRF | Victim's HL location linked to attacker's Genesis account | HttpOnly cookie on OAuth start; callback requires matching cookie + `state` |
+| Firestore user doc client writes | User could hijack webhook routing via `hlConnection.locationId` | `users/{userId}` read-only for clients; server-only writes |
+| Webhook skip-verify flag | Fake CRM events in production | Option removed; signatures always verified (emulator allows unsigned only when no key is set) |
+| Unbounded generation prompts | Cost / abuse | Max 10,000 characters per message |
+| Login open redirect | Phishing via `?redirect=https://evil.com` | `safeRedirectPath()` — in-app paths only |
+| Preview error `innerHTML` | XSS in error display | `textContent` instead |
+
+**OAuth note:** `state` prevents forged callbacks but does not bind who approved in HL. The cookie ensures OAuth completes in the same browser that clicked Connect.
+
+**Webhooks / live preview:** Events are stored in Firestore and delivered via `onSnapshot` → `window.__GENESIS__.onHlEvent` (not SSE). Generated apps should use `upsertContact` by contact id so duplicate webhook deliveries do not create duplicate rows.
+
+### Still open (and why not implemented)
+
+| Issue | Why not implemented |
+|-------|---------------------|
+| Firebase JWT in generated preview | Needs short-lived preview-scoped tokens; larger design change. Full JWT refresh on expiry works today via parent `getIdToken(true)`. |
+| Rate limits on `/generate` | Only message length is capped. Per-user quotas need durable counters (Firestore or Redis) across stateless instances — out of scope for a demo with few trusted users. |
+| CORS on all functions | `cors: true` lets the SPA call `api` and `generate` from Hosting. Locking to `FRONTEND_URL` everywhere needs custom middleware and preflight handling; OAuth start was tightened for credentialed cookies. |
+| Webhook replay dedupe | HL can resend the same `webhookId`; needs a persistent store per id + TTL. Lower priority than fixes above; signature verification blocks unsigned replays. UI dedupe relies on `upsertContact` in generated code. |
+| Public Cloud Functions, JWT-only gate | Browser calls functions directly (`invoker: "public"`); auth is Firebase JWT in code, not a GCP edge layer. A backend in front (Cloud Armor, API Gateway, IAP) could add WAF, rate limits, and extra auth before Cloud Functions. |
+
+---
+
 ## What you would improve
 
 - **One preview source of truth** — Right now the LLM has to keep `preview.html` and `.vue` files in sync, and editing `.vue` in Monaco doesn't update the live preview. I'd add a small build step (or in-iframe bundler) so preview runs the same code the editor shows.
-
-- **Rate limits on `/generate`** — Any logged-in user can hit the Anthropic endpoint with no cap. I'd add per-user quotas, max prompt size enforcement, and basic abuse protection before this went to real users.
 
 - **Webhook event cleanup** — Every HL webhook is stored forever under `users/{uid}/webhookEvents`. I'd add TTL/expiry or a rolling window so Firestore storage and listener costs don't grow unbounded.
 

@@ -56,6 +56,7 @@ function isAbortError(err: unknown): boolean {
 }
 
 const MAX_TOOL_ROUNDS = 3;
+const MAX_GENERATION_MESSAGE_CHARS = 10_000;
 
 export const generate = onRequest(
   {
@@ -97,6 +98,14 @@ export const generate = onRequest(
       res.status(400).json({
         error: "VALIDATION_ERROR",
         message: "projectId and message are required",
+      });
+      return;
+    }
+
+    if (message.length > MAX_GENERATION_MESSAGE_CHARS) {
+      res.status(400).json({
+        error: "VALIDATION_ERROR",
+        message: `message must be at most ${MAX_GENERATION_MESSAGE_CHARS} characters`,
       });
       return;
     }

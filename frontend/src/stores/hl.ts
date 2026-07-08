@@ -21,7 +21,9 @@ export const useHlStore = defineStore("hl", () => {
   }
 
   async function startOAuth(): Promise<void> {
-    const { authUrl } = await apiRequest<{ authUrl: string }>("/hl/oauth/start");
+    const { authUrl } = await apiRequest<{ authUrl: string }>("/hl/oauth/start", {
+      credentials: "include",
+    });
     window.location.href = authUrl;
   }
 

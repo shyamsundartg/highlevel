@@ -9,15 +9,9 @@ export const HL_ALLOWED_PATH_PREFIXES = [
   "/contacts",
   "/conversations",
   "/calendars",
-  "/locations",
   "/appointments",
   "/events",
   "/free-slots",
-  "/search",
-  "/webhooks",
-  "/webhook-events",
-  "/webhook-event-types",
-  "/webhook-event-types/search",
 ] as const;
 export const HL_USER_TYPE = "Location";
 

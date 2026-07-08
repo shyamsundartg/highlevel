@@ -7,7 +7,6 @@ import {
   hlCreateAppointment,
   hlCreateContact,
   hlCreateConversation,
-  hlFetch,
   hlGetAppointment,
   hlGetCalendarEvents,
   hlGetContact,
@@ -18,13 +17,15 @@ import {
   hlSearchConversations,
   hlSendMessage,
   hlUpdateContact,
-  HlProxyRequest,
 } from "../services/highlevel/api";
 import { HlApiError } from "../services/highlevel/errors";
 import { buildAuthUrl } from "../services/highlevel/oauth";
 import { createState } from "../services/highlevel/state";
 import { disconnect, getConnection } from "../services/highlevel/tokens";
 import { listWebhookEvents } from "../services/highlevel/webhooks";
+import {
+  buildOAuthStateCookie,
+} from "../utils/oauthCookie";
 
 export const highlevelRouter = Router();
 
@@ -45,6 +46,9 @@ highlevelRouter.get(
       const { uid } = req as AuthenticatedRequest;
       const state = await createState(uid);
       const authUrl = buildAuthUrl(state);
+      res.setHeader("Access-Control-Allow-Origin", env.frontendUrl);
+      res.setHeader("Access-Control-Allow-Credentials", "true");
+      res.setHeader("Set-Cookie", buildOAuthStateCookie(state));
       logger.info("HL OAuth start", {
         uid,
         scopes: env.hlOAuthScopes,
@@ -140,30 +144,7 @@ highlevelRouter.get(
   },
 );
 
-highlevelRouter.post(
-  "/hl/proxy",
-  requireAuth,
-  async (req: Request, res: Response) => {
-    try {
-      const { uid } = req as AuthenticatedRequest;
-      const body = req.body as Partial<HlProxyRequest>;
-      if (!body.method || !body.path) {
-        sendError(res, 400, "VALIDATION_ERROR", "method and path are required");
-        return;
-      }
-      const result = await hlFetch(uid, {
-        method: body.method,
-        path: body.path,
-        query: body.query,
-        body: body.body,
-      });
-      res.status(result.status).json(result.data);
-    } catch (err) {
-      handleHlError(res, err);
-    }
-  },
-);
-
+/** GET /contacts/ — list contacts for the connected location. */
 highlevelRouter.get(
   "/hl/contacts",
   requireAuth,

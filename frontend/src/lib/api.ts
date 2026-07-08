@@ -37,6 +37,7 @@ export async function apiRequest<T>(
   const response = await fetch(`${API_BASE}${path}`, {
     ...options,
     headers,
+    credentials: options.credentials ?? "same-origin",
   });
 
   if (!response.ok) {

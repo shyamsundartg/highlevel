@@ -3,6 +3,7 @@ import { computed, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { Loader2 } from "lucide-vue-next";
 import { useAuthStore } from "@/stores/auth";
+import { safeRedirectPath } from "@/lib/safeRedirect";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,8 +45,9 @@ async function submit(): Promise<void> {
     } else {
       await auth.signIn(email.value, password.value);
     }
-    const redirect =
-      typeof route.query.redirect === "string" ? route.query.redirect : "/projects";
+    const redirect = safeRedirectPath(
+      typeof route.query.redirect === "string" ? route.query.redirect : undefined,
+    );
     await router.push(redirect);
   } catch (err) {
     error.value = err instanceof Error ? err.message : "Authentication failed";

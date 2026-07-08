@@ -55,11 +55,6 @@ export const env = {
   get hlWebhookPublicKey() {
     return optional("HL_WEBHOOK_PUBLIC_KEY");
   },
-
-  /** When true, skip signature checks (local emulator / curl tests only). */
-  get hlWebhookSkipVerify() {
-    return optional("HL_WEBHOOK_SKIP_VERIFY", "false").toLowerCase() === "true";
-  },
 };
 
 

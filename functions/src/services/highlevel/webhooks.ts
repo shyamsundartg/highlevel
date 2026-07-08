@@ -31,16 +31,12 @@ function isEmulator(): boolean {
 
 /**
  * Verify HL webhook signature (Ed25519 via X-GHL-Signature).
- * Skips when HL_WEBHOOK_SKIP_VERIFY=true or emulator with no public key.
+ * Allows unsigned events only in the local emulator when no public key is set.
  */
 export function verifyWebhookSignature(
   rawBody: Buffer,
   ghlSignature: string | undefined,
 ): boolean {
-  if (env.hlWebhookSkipVerify) {
-    return true;
-  }
-
   const publicKeyPem = env.hlWebhookPublicKey;
   if (!publicKeyPem) {
     // Local emulator: allow unsigned events for curl demos.
