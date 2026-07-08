@@ -4,7 +4,8 @@ import { onRequest } from "firebase-functions/v2/https";
 import * as logger from "firebase-functions/logger";
 import { assertGenerationEnv, env } from "./config/env";
 import { buildGenerationContext } from "./services/llm/context";
-import { FileBlockParser, parseFileBlocks } from "./services/llm/parser";
+import { FileBlockParser } from "./services/llm/parser";
+import { buildAssistantDisplayText } from "./services/llm/displayText";
 import { SYSTEM_PROMPT } from "./services/llm/prompts";
 import {
   GET_API_DOC_TOOL,
@@ -55,24 +56,6 @@ function isAbortError(err: unknown): boolean {
 }
 
 const MAX_TOOL_ROUNDS = 3;
-
-function buildAssistantDisplayText(
-  rawText: string,
-  filesWritten: Record<string, SnapshotFileEntry>,
-): string {
-  const { plainText } = parseFileBlocks(rawText);
-  const summary = plainText.trim();
-  if (summary) {
-    return summary;
-  }
-
-  const paths = Object.keys(filesWritten);
-  if (paths.length > 0) {
-    return `Updated ${paths.join(", ")}.`;
-  }
-
-  return rawText.trim();
-}
 
 export const generate = onRequest(
   {
